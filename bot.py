@@ -31,13 +31,12 @@ try:
 except Exception as e:
     print("FFMPEG NOT FOUND:", e)
 
-print("Cookies exists:", os.path.exists("cookies.txt"))
-
 # =========================
 # CONFIG
 # =========================
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
@@ -45,7 +44,6 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 # =========================
 # TELEGRAM HANDLER
 # =========================
-
 
 async def handle_message(
     update: Update,
@@ -69,9 +67,7 @@ async def handle_message(
         def download():
 
             ydl_opts = {
-                "cookiefile": "cookies.txt",
-
-                "format": "bestaudio",
+                "format": "bestaudio/best",
 
                 "outtmpl": os.path.join(
                     DOWNLOAD_DIR,
@@ -82,17 +78,13 @@ async def handle_message(
 
                 "noplaylist": True,
 
-                "extractor_args": {
-                    "youtube": {
-                        "player_client": ["tv"]
-                    }
-                },
+                "quiet": False,
 
                 "postprocessors": [
                     {
                         "key": "FFmpegExtractAudio",
                         "preferredcodec": "mp3",
-                        "preferredquality": "320",
+                        "preferredquality": "192",
                     },
                     {
                         "key": "FFmpegThumbnailsConvertor",
@@ -152,7 +144,7 @@ async def handle_message(
 
         await status.edit_text("Done!")
 
-        # Cleanup files
+        # Cleanup
         if mp3_file and os.path.exists(mp3_file):
             os.remove(mp3_file)
 
@@ -166,7 +158,6 @@ async def handle_message(
         await status.edit_text(
             f"Download failed:\n{str(e)}"
         )
-
 
 # =========================
 # MAIN
@@ -195,7 +186,6 @@ def main():
     print("Bot is running...")
 
     app.run_polling()
-
 
 if __name__ == "__main__":
     main()
