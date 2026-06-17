@@ -2,6 +2,9 @@ import os
 import asyncio
 import yt_dlp
 
+import subprocess
+
+    
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -10,7 +13,11 @@ from telegram.ext import (
     filters,
 )
 
-BOT_TOKEN = os.getenv("8982040775:AAGTXSIcfl9PPxVMNwzyC7QHiwrDvVrwFaM")
+try:
+    print(subprocess.check_output(["ffmpeg", "-version"]).decode().split("\n")[0])
+except Exception as e:
+    print("FFMPEG NOT FOUND:", e)
+BOT_TOKEN = "8982040775:AAGeuMolGwn_Htcr0Pcs6IrqXQeU0y7AZFk"
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
@@ -33,7 +40,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "format": "bestaudio/best",
                 "outtmpl": os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s"),
                 "writethumbnail": True,
-                "ffmpeg_location": r"C:\Users\Nemesis\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.1.1-full_build\bin",
                 "postprocessors": [
                 {
                     "key": "FFmpegExtractAudio",
