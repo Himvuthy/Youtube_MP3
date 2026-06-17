@@ -14,7 +14,15 @@ from telegram.ext import (
 # =========================
 # DEBUG INFO
 # =========================
+import subprocess
 
+print(
+    subprocess.run(
+        ["yt-dlp", "-F", "https://youtu.be/bEjfvakuDBM"],
+        capture_output=True,
+        text=True
+    ).stdout
+)
 try:
     print("NODE:", subprocess.check_output(
         ["node", "--version"]
