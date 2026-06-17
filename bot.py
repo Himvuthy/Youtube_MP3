@@ -1,10 +1,8 @@
 import os
 import asyncio
+import subprocess
 import yt_dlp
 
-import subprocess
-
-    
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -13,11 +11,21 @@ from telegram.ext import (
     filters,
 )
 
+# Debug checks
 try:
-    print(subprocess.check_output(["ffmpeg", "-version"]).decode().split("\n")[0])
+    print("NODE:", subprocess.check_output(
+        ["node", "--version"]).decode().strip())
+except Exception as e:
+    print("NODE NOT FOUND:", e)
+
+try:
+    print(subprocess.check_output(
+        ["ffmpeg", "-version"]).decode().split("\n")[0])
 except Exception as e:
     print("FFMPEG NOT FOUND:", e)
-BOT_TOKEN = "8982040775:AAHEbr09guT2NdSMY8u9Y5jtYq7iFAnzurA"
+
+# Use Railway variable instead of hardcoded token
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
@@ -36,30 +44,50 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
 
         def download():
+
             ydl_opts = {
                 "cookiefile": "cookies.txt",
+
                 "format": "bestaudio/best",
-                "outtmpl": os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s"),
+
+                "outtmpl": os.path.join(
+                    DOWNLOAD_DIR,
+                    "%(title)s.%(ext)s"
+                ),
+
                 "writethumbnail": True,
-                "postprocessors": [
-                {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "320",
+
+                "extractor_args": {
+                    "youtube": {
+                        "player_client": [
+                            "android",
+                            "web"
+                        ]
+                    }
                 },
-            {
-                "key": "FFmpegThumbnailsConvertor",
-                "format": "png",
-        },
-    ],
-}
+
+                "postprocessors": [
+                    {
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "mp3",
+                        "preferredquality": "320",
+                    },
+                    {
+                        "key": "FFmpegThumbnailsConvertor",
+                        "format": "png",
+                    },
+                ],
+
+                "quiet": False,
+                "noplaylist": True,
+            }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 return ydl.extract_info(url, download=True)
 
         info = await asyncio.to_thread(download)
 
-        title = info.get("title", "")
+        title = info.get("title", "Unknown Title")
 
         mp3_file = None
         thumbnail_file = None
@@ -91,10 +119,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.edit_text("Done!")
 
     except Exception as e:
-        await msg.edit_text(f"Error:\n{str(e)}")
+        await msg.edit_text(
+            f"Download failed:\n{str(e)}"
+        )
 
 
 def main():
+
+    if not BOT_TOKEN:
+        raise ValueError(
+            "BOT_TOKEN environment variable not found."
+        )
 
     app = Application.builder().token(BOT_TOKEN).build()
 
