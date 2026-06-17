@@ -11,35 +11,58 @@ from telegram.ext import (
     filters,
 )
 
-# Debug checks
+# =========================
+# DEBUG INFO
+# =========================
+
 try:
     print("NODE:", subprocess.check_output(
-        ["node", "--version"]).decode().strip())
+        ["node", "--version"]
+    ).decode().strip())
 except Exception as e:
     print("NODE NOT FOUND:", e)
 
 try:
-    print(subprocess.check_output(
-        ["ffmpeg", "-version"]).decode().split("\n")[0])
+    print(
+        subprocess.check_output(
+            ["ffmpeg", "-version"]
+        ).decode().split("\n")[0]
+    )
 except Exception as e:
     print("FFMPEG NOT FOUND:", e)
 
-# Use Railway variable instead of hardcoded token
+print("Cookies exists:", os.path.exists("cookies.txt"))
+
+# =========================
+# CONFIG
+# =========================
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
+# =========================
+# TELEGRAM HANDLER
+# =========================
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+async def handle_message(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
     url = update.message.text.strip()
 
     if "youtube.com" not in url and "youtu.be" not in url:
-        await update.message.reply_text("Please send a valid YouTube link.")
+        await update.message.reply_text(
+            "Please send a valid YouTube link."
+        )
         return
 
-    msg = await update.message.reply_text("Downloading...")
+    status = await update.message.reply_text(
+        "Downloading..."
+    )
 
     try:
 
@@ -48,7 +71,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ydl_opts = {
                 "cookiefile": "cookies.txt",
 
-                "format": "bestaudio/best",
+                "format": "bestaudio",
 
                 "outtmpl": os.path.join(
                     DOWNLOAD_DIR,
@@ -57,12 +80,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                 "writethumbnail": True,
 
+                "noplaylist": True,
+
                 "extractor_args": {
                     "youtube": {
-                        "player_client": [
-                            "android",
-                            "web"
-                        ]
+                        "player_client": ["tv"]
                     }
                 },
 
@@ -77,17 +99,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         "format": "png",
                     },
                 ],
-
-                "quiet": False,
-                "noplaylist": True,
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                return ydl.extract_info(url, download=True)
+                return ydl.extract_info(
+                    url,
+                    download=True
+                )
 
         info = await asyncio.to_thread(download)
 
-        title = info.get("title", "Unknown Title")
+        title = info.get(
+            "title",
+            "Unknown Title"
+        )
 
         mp3_file = None
         thumbnail_file = None
@@ -97,32 +122,55 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if not file.startswith(title):
                 continue
 
-            path = os.path.join(DOWNLOAD_DIR, file)
+            full_path = os.path.join(
+                DOWNLOAD_DIR,
+                file
+            )
 
             if file.endswith(".mp3"):
-                mp3_file = path
+                mp3_file = full_path
 
             elif file.endswith(".png"):
-                thumbnail_file = path
+                thumbnail_file = full_path
 
         if thumbnail_file:
+
             with open(thumbnail_file, "rb") as photo:
-                await update.message.reply_photo(photo)
+
+                await update.message.reply_photo(
+                    photo=photo
+                )
 
         if mp3_file:
+
             with open(mp3_file, "rb") as audio:
+
                 await update.message.reply_audio(
                     audio=audio,
                     title=title
                 )
 
-        await msg.edit_text("Done!")
+        await status.edit_text("Done!")
+
+        # Cleanup files
+        if mp3_file and os.path.exists(mp3_file):
+            os.remove(mp3_file)
+
+        if thumbnail_file and os.path.exists(thumbnail_file):
+            os.remove(thumbnail_file)
 
     except Exception as e:
-        await msg.edit_text(
+
+        print("ERROR:", str(e))
+
+        await status.edit_text(
             f"Download failed:\n{str(e)}"
         )
 
+
+# =========================
+# MAIN
+# =========================
 
 def main():
 
@@ -131,7 +179,11 @@ def main():
             "BOT_TOKEN environment variable not found."
         )
 
-    app = Application.builder().token(BOT_TOKEN).build()
+    app = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .build()
+    )
 
     app.add_handler(
         MessageHandler(
