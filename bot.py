@@ -101,11 +101,19 @@ async def handle_message(
                 ],
             }
 
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                return ydl.extract_info(
-                    url,
-                    download=True
-                )
+            with yt_dlp.YoutubeDL({}) as ydl:
+                info = ydl.extract_info(url, download=False)
+
+                print("FORMATS:")
+                for f in info.get("formats", []):
+                    print(
+                    f"{f.get('format_id')} | "
+                    f"{f.get('ext')} | "
+                    f"{f.get('vcodec')} | "
+                    f"{f.get('acodec')}"
+                    )    
+
+    
 
         info = await asyncio.to_thread(download)
 
