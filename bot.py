@@ -17,7 +17,7 @@ try:
     print(subprocess.check_output(["ffmpeg", "-version"]).decode().split("\n")[0])
 except Exception as e:
     print("FFMPEG NOT FOUND:", e)
-BOT_TOKEN = "8982040775:AAGeuMolGwn_Htcr0Pcs6IrqXQeU0y7AZFk"
+BOT_TOKEN = "8982040775:AAHEbr09guT2NdSMY8u9Y5jtYq7iFAnzurA"
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
