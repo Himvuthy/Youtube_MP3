@@ -37,6 +37,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         def download():
             ydl_opts = {
+                "cookiefile": "cookies.txt",
                 "format": "bestaudio/best",
                 "outtmpl": os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s"),
                 "writethumbnail": True,
